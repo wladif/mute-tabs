@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body {
+      width: 250px;
+      padding: 10px;
+      font-family: sans-serif;
+    }
+    .status {
+      margin-bottom: 10px;
+      font-weight: bold;
+    }
+    button {
+      width: 100%;
+      padding: 8px;
+      cursor: pointer;
+      margin-bottom: 5px;
+    }
+    #domain-list {
+      margin-top: 10px;
+      max-height: 150px;
+      overflow-y: auto;
+      border-top: 1px solid #ccc;
+      padding-top: 5px;
+    }
+    .domain-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.9em;
+      margin-bottom: 3px;
+    }
+    .remove-btn {
+      color: red;
+      cursor: pointer;
+      border: none;
+      background: none;
+      width: auto;
+      padding: 0 5px;
+    }
+  </style>
+</head>
+<body>
+  <div id="current-domain-container">
+    <div class="status" id="status-text">Detecting site...</div>
+    <button id="toggle-btn" disabled>Add to Mute List</button>
+  </div>
+  <div id="domain-list">
+    <strong>Muted Domains:</strong>
+    <div id="list-items"></div>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>
