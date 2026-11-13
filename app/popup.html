@@ -1,56 +1,317 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mute Tabs</title>
   <style>
-    body {
-      width: 250px;
-      padding: 10px;
-      font-family: sans-serif;
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:          #f7f6f2;
+      --surface:     #ffffff;
+      --surface-2:   #f3f0ec;
+      --border:      #d4d1ca;
+      --text:        #28251d;
+      --text-muted:  #7a7974;
+      --text-faint:  #b0aea9;
+      --primary:     #01696f;
+      --primary-h:   #0c4e54;
+      --error:       #a12c7b;
+      --error-h:     #7d1e5e;
+      --success:     #437a22;
+      --radius-sm:   0.375rem;
+      --radius-md:   0.5rem;
+      --radius-lg:   0.75rem;
+      --radius-full: 9999px;
     }
-    .status {
-      margin-bottom: 10px;
-      font-weight: bold;
+
+    html, body {
+      width: 360px;
+      min-height: 420px;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
     }
-    button {
+
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 16px 12px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+    }
+
+    .header-icon {
+      width: 32px;
+      height: 32px;
+      flex-shrink: 0;
+    }
+
+    .header-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text);
+      flex: 1;
+    }
+
+    .header-count {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--text-muted);
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-full);
+      padding: 1px 8px;
+    }
+
+    .site-section {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+    }
+
+    .site-card {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 7px 10px;
+      margin-bottom: 8px;
+    }
+
+    .site-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-faint);
+      flex-shrink: 0;
+    }
+
+    .site-host {
+      flex: 1;
+      font-size: 13px;
+      color: var(--text);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .site-badge {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 1px 7px;
+      border-radius: var(--radius-full);
+      flex-shrink: 0;
+    }
+    .site-badge.hidden { display: none; }
+    .site-badge.muted {
+      color: var(--success);
+      background: rgba(67, 122, 34, 0.1);
+      border: 1px solid rgba(67, 122, 34, 0.25);
+    }
+    .site-badge.unmuted {
+      color: var(--text-muted);
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+    }
+
+    .btn-primary {
       width: 100%;
-      padding: 8px;
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius-md);
+      padding: 7px 14px;
+      font-size: 13px;
+      font-weight: 600;
       cursor: pointer;
-      margin-bottom: 5px;
+      transition: background 150ms ease, opacity 150ms ease;
+      white-space: nowrap;
     }
-    #domain-list {
-      margin-top: 10px;
-      max-height: 150px;
+    .btn-primary:hover:not(:disabled) { background: var(--primary-h); }
+    .btn-primary:active:not(:disabled) { transform: scale(0.98); }
+    .btn-primary:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .hint-msg {
+      color: var(--text-faint);
+      font-size: 11px;
+      margin-top: 5px;
+      min-height: 14px;
+    }
+    .hint-msg.error { color: var(--error); }
+
+    .list-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 16px 6px;
+    }
+
+    .list-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-faint);
+    }
+
+    .btn-clear-all {
+      background: none;
+      border: none;
+      color: var(--error);
+      font-size: 11px;
+      cursor: pointer;
+      padding: 0;
+      opacity: 0.75;
+      transition: opacity 150ms;
+    }
+    .btn-clear-all:hover { opacity: 1; }
+
+    .domain-list {
+      padding: 0 16px 8px;
+      max-height: 230px;
       overflow-y: auto;
-      border-top: 1px solid #ccc;
-      padding-top: 5px;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border) transparent;
     }
+
+    .empty-state {
+      text-align: center;
+      color: var(--text-faint);
+      font-size: 12px;
+      padding: 24px 0 12px;
+    }
+    .empty-icon {
+      font-size: 28px;
+      display: block;
+      margin-bottom: 8px;
+      opacity: 0.5;
+    }
+
     .domain-item {
       display: flex;
-      justify-content: space-between;
       align-items: center;
-      font-size: 0.9em;
-      margin-bottom: 3px;
+      gap: 8px;
+      padding: 7px 10px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      margin-bottom: 5px;
+      animation: fadeIn 180ms ease;
+      box-shadow: 0 1px 2px rgba(40, 37, 29, 0.05);
     }
-    .remove-btn {
-      color: red;
-      cursor: pointer;
-      border: none;
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-4px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .domain-dot {
+      width: 6px;
+      height: 6px;
+      background: var(--success);
+      border-radius: var(--radius-full);
+      flex-shrink: 0;
+    }
+
+    .domain-name {
+      flex: 1;
+      font-size: 13px;
+      color: var(--text);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .btn-remove {
       background: none;
-      width: auto;
-      padding: 0 5px;
+      border: none;
+      cursor: pointer;
+      color: var(--text-faint);
+      padding: 2px 4px;
+      border-radius: var(--radius-sm);
+      font-size: 15px;
+      line-height: 1;
+      transition: color 150ms, background 150ms;
+      flex-shrink: 0;
+    }
+    .btn-remove:hover {
+      color: var(--error);
+      background: rgba(161, 44, 123, 0.08);
+    }
+
+    .footer {
+      border-top: 1px solid var(--border);
+      padding: 8px 16px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--surface);
+    }
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      background: var(--success);
+      border-radius: var(--radius-full);
+      animation: pulse 2s ease-in-out infinite;
+      flex-shrink: 0;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.35; }
+    }
+    .footer-text {
+      font-size: 11px;
+      color: var(--text-faint);
     }
   </style>
 </head>
 <body>
-  <div id="current-domain-container">
-    <div class="status" id="status-text">Detecting site...</div>
-    <button id="toggle-btn" disabled>Add to Mute List</button>
+
+  <div class="header">
+    <img class="header-icon" src="icons/icon32.png" alt="Mute Tabs icon" />
+    <span class="header-title">Mute Tabs</span>
+    <span class="header-count" id="count">0 domains</span>
   </div>
-  <div id="domain-list">
-    <strong>Muted Domains:</strong>
-    <div id="list-items"></div>
+
+  <div class="site-section">
+    <div class="site-card">
+      <span class="site-label">Current site</span>
+      <span class="site-host" id="status-text">Detecting site…</span>
+      <span class="site-badge hidden" id="site-badge"></span>
+    </div>
+    <button class="btn-primary" id="toggle-btn" disabled>Mute this site</button>
+    <div class="hint-msg" id="hint-msg"></div>
   </div>
+
+  <div class="list-header">
+    <span class="list-label">Muted Domains</span>
+    <button class="btn-clear-all" id="btn-clear-all">Clear all</button>
+  </div>
+
+  <div class="domain-list" id="list-items">
+    <div class="empty-state" id="empty-state">
+      <span class="empty-icon">🔇</span>
+      No domains muted yet.<br>Mute the current site to get started.
+    </div>
+  </div>
+
+  <div class="footer">
+    <div class="status-dot"></div>
+    <span class="footer-text">Active — tabs from muted sites are silenced automatically</span>
+  </div>
+
   <script src="popup.js"></script>
 </body>
 </html>
